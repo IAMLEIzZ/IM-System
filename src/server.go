@@ -73,7 +73,7 @@ func (this *Server) DoHandler(conn net.Conn) {
 			}
 			msg := string(buffer[:n - 1])
 			// 广播消息
-			user.UserBoardCast(msg)
+			user.UserDoMessage(msg)
 		}
 	}()
 	

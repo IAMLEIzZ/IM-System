@@ -54,7 +54,23 @@ func (this *User) UserOffLine(){
 	this.server.Boardcast(this, "下线")
 }
 
+// 给用户本身发送消息
+func (this *User) connectUser(msg string) {
+	this.conn.Write([]byte(msg + "\n"))
+}
+
 // 用户广播发送消息
-func (this *User) UserBoardCast(msg string){
-	this.server.Boardcast(this, msg)
+func (this *User) UserDoMessage(msg string){
+	// 当用户输入的信息为 /who 时，输出当前在线用户的列表，否则当做正常广播消息
+	if msg == "/who" {
+		this.server.mapLock.Lock()
+		for _, value := range this.server.OnlineMap {
+			msg := "[" + value.Addr + "]" + value.Name + ": 在线"
+			this.connectUser(msg)
+		}
+		this.server.mapLock.Unlock()
+	} else {
+		// 广播发送消息
+		this.server.Boardcast(this, msg)
+	}
 }
