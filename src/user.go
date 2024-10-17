@@ -9,10 +9,13 @@ type User struct {
 	Addr string
 	C chan string
 	conn net.Conn
+
+	// 用户申请到的服务器
+	server *Server
 }
 
 // 创建一个用户
-func NewUser(conn net.Conn) *User{
+func NewUser(conn net.Conn, server *Server) *User{
 	userAddr := conn.RemoteAddr().String()
 
 	user := &User{
@@ -20,6 +23,7 @@ func NewUser(conn net.Conn) *User{
 		Addr: userAddr,
 		C: make(chan string),
 		conn: conn,
+		server: server,
 	}
 
 	go user.ListenMessage()
@@ -34,4 +38,23 @@ func (this *User) ListenMessage() {
 
 		this.conn.Write([]byte(msg + "\n"))
 	}
+}
+
+// 用户上线
+func (this *User) UserOnline() {
+	this.server.mapLock.Lock()
+	this.server.OnlineMap[this.Name] = this
+	this.server.mapLock.Unlock()
+
+	this.server.Boardcast(this, "已上线")
+}
+
+// 用户下线
+func (this *User) UserOffLine(){
+	this.server.Boardcast(this, "下线")
+}
+
+// 用户广播发送消息
+func (this *User) UserBoardCast(msg string){
+	this.server.Boardcast(this, msg)
 }

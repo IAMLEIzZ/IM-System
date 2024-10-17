@@ -41,24 +41,19 @@ func (this *Server) ListenMessage() {
 func (this *Server) DoHandler(conn net.Conn) {
 	// fmt.Println("处理请求ing")
 	/*
-		这里的一个 coon 对应着一个用户，因此对应单个用户的处理一个写在 DoHandler 中
+		这里的一个 coon 对应着一个用户，因此对应单个用户消息的处理一个写在 DoHandler 中
 	*/
 	// 1. 创建新用户
-	user := NewUser(conn)
-	// 2. 将上线的用户注册到 onlineMap 中
-	this.mapLock.Lock()
-	this.OnlineMap[user.Name] = user
-	this.mapLock.Unlock()
-	// 3. 向在线的所有用户广播该用户已上线
-	this.Boardcast(user, "上线")
+	user := NewUser(conn, this)
+	// 2. 用户上线
+	user.UserOnline()
 
 	// 接收用户发送的消息boardcast
 	go func() {
 		// 创建用户发送消息的缓冲区
 		buffer := make([]byte, 4096)
-		
-		// 当 buffer 为 0 时，conn.Read()会阻塞
-		/*
+		/*	
+			当 buffer 为 0 时，conn.Read()会阻塞，而不会返回 n = 0
 			在典型的 TCP 连接中，n == 0 只会在以下情况出现：
 			1. 对方主动关闭了连接（例如客户端调用 conn.Close()）。
 			2. 发生了某些异常导致连接被强制关闭。
@@ -69,7 +64,7 @@ func (this *Server) DoHandler(conn net.Conn) {
 			// buffer 中完全为空
 			if n == 0 {
 				// 用户下线 
-				this.Boardcast(user, "下线")
+				user.UserOffLine()
 				return
 			} 
 			if err != nil {
@@ -77,8 +72,8 @@ func (this *Server) DoHandler(conn net.Conn) {
 				return
 			}
 			msg := string(buffer[:n - 1])
-			// 处理读取的数据
-			this.Boardcast(user, msg)
+			// 广播消息
+			user.UserBoardCast(msg)
 		}
 	}()
 	
@@ -131,4 +126,13 @@ func (this *Server) Start() {
 	3. 在注册该用户后，server 服务器因为要将消息全局广播给所有的客户端，所以需要先将该上线用户的消息 push 到 chan 中
 	4. chan 中得到用户上线的消息后，此时，this.ListenMessage() 会停止阻塞，将消息送到每个在线用户的 chan 中
 	5. 每个在线用户的 chan 得到消息后，user.ListenMessage() 会停止阻塞，将收到的消息传到显示在客户端（conn.Write([]byte(msg + "\n"))）
+*/
+
+/*
+	goroutine关键点
+	1. 要记住，goroutine 完成当前函数后会自动结束，如果要保持当前 goroutine，必须保证调用 goroutine 的进程不结束
+	所以，在上面的代码中，用户连续聊天的 dohandler 中添加了 select{}，以保证 dohandler 的这个 goroutine 不结束
+	（select{}保证每个用户与服务器的连接不断开），这个 goroutine 不结束，则会保证 select{} 上面的那个用户发送广播消
+	息的 goroutine 不退出，则会保证其中的 for 循环持续轮询，从而达到用户连续聊天的目的。
+	总结：要想一个 goroutine 不结束，要保证调用 goroutine 的函数体不结束。
 */
