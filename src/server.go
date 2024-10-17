@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"net"
+	// "runtime"
 	"sync"
+	"time"
 )
 
 type Server struct {
@@ -47,6 +49,8 @@ func (this *Server) DoHandler(conn net.Conn) {
 	user := NewUser(conn, this)
 	// 2. 用户上线
 	user.UserOnline()
+	// 是否活跃信号
+	isLive := make(chan bool)
 
 	// 接收用户发送的消息boardcast
 	go func() {
@@ -64,7 +68,9 @@ func (this *Server) DoHandler(conn net.Conn) {
 			// buffer 中完全为空
 			if n == 0 {
 				// 用户下线 
-				user.UserOffLine()
+				if _, ok := this.OnlineMap[user.Name]; ok {
+					user.UserOffLine()
+				}
 				return
 			} 
 			if err != nil {
@@ -74,10 +80,35 @@ func (this *Server) DoHandler(conn net.Conn) {
 			msg := string(buffer[:n - 1])
 			// 广播消息
 			user.UserDoMessage(msg)
+
+			// 保活
+			isLive <- true
 		}
 	}()
-	
-	select{}
+	// 超时强踢功能
+	for {
+		select{
+		// 这里为什么 isLive 后不用操作？
+		/*
+			在 select 语句中，会并行监听所有 case 的条件，也就是说所有 case 的条件语句会同时执行并堵塞，
+			直到启动一个 case 成立，他会停止监听其他 case 条件。在本例中，同时开始 <-isLive 和 <-time.After(time.Second * 10)
+			如果 isLive 成立，就算没有操作，计时器也会被重置，因此无需在 isLive 中重置计时器
+		*/
+		case <-isLive :
+			// 当前用户处于活跃态
+		case <-time.After(time.Second * 3) :
+			// 当前用户 10 秒没有操作，超时踢出
+			user.SendMessage("长时间没有活动，踢出聊天室")
+			// Onlinemap 中删除 user
+			user.UserOffLine()
+			// 关闭资源(关闭用户通讯channel 和 连接句柄)
+			close(user.C)
+			conn.Close()
+
+			// 彻底结束一个 user 的连接周期
+			return
+		}
+	}
 }
 
 // 创建 server 方法

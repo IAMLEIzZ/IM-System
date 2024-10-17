@@ -52,7 +52,14 @@ func (this *User) UserOnline() {
 
 // 用户下线
 func (this *User) UserOffLine(){
+	
+	//用户下线,将用户从onlineMap中删除
+	this.server.mapLock.Lock()
+	delete(this.server.OnlineMap, this.Name)
+	this.server.mapLock.Unlock()
+
 	this.server.Boardcast(this, "下线")
+
 }
 
 // 给用户本身发送消息
