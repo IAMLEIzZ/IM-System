@@ -63,25 +63,26 @@ func (this *Server) DoHandler(conn net.Conn) {
 			1. 对方主动关闭了连接（例如客户端调用 conn.Close()）。
 			2. 发生了某些异常导致连接被强制关闭。
 		*/
-		n, err := conn.Read(buffer)
-		fmt.Println(user, n)
-		// buffer 中完全为空
-		if n == 0 {
-			// 用户下线 
-			this.Boardcast(user, "下线")
-			return
-		} 
-		if err != nil {
-			fmt.Println("Conn Read err", err)
-			return
+		for {
+			n, err := conn.Read(buffer)
+			// fmt.Println(user, n)
+			// buffer 中完全为空
+			if n == 0 {
+				// 用户下线 
+				this.Boardcast(user, "下线")
+				return
+			} 
+			if err != nil {
+				fmt.Println("Conn Read err", err)
+				return
+			}
+			msg := string(buffer[:n - 1])
+			// 处理读取的数据
+			this.Boardcast(user, msg)
 		}
-		
-		msg := string(buffer[:n - 1])
-		// 处理读取的数据
-		this.Boardcast(user, msg)
 	}()
 	
-	// select{}
+	select{}
 }
 
 // 创建 server 方法
