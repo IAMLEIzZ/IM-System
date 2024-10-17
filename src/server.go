@@ -40,6 +40,9 @@ func (this *Server) ListenMessage() {
 // 处理请求
 func (this *Server) DoHandler(conn net.Conn) {
 	// fmt.Println("处理请求ing")
+	/*
+		这里的一个 coon 对应着一个用户，因此对应单个用户的处理一个写在 DoHandler 中
+	*/
 	// 1. 创建新用户
 	user := NewUser(conn)
 	// 2. 将上线的用户注册到 onlineMap 中
@@ -49,6 +52,35 @@ func (this *Server) DoHandler(conn net.Conn) {
 	// 3. 向在线的所有用户广播该用户已上线
 	this.Boardcast(user, "上线")
 
+	// 接收用户发送的消息boardcast
+	go func() {
+		// 创建用户发送消息的缓冲区
+		buffer := make([]byte, 4096)
+		
+		// 当 buffer 为 0 时，conn.Read()会阻塞
+		/*
+			在典型的 TCP 连接中，n == 0 只会在以下情况出现：
+			1. 对方主动关闭了连接（例如客户端调用 conn.Close()）。
+			2. 发生了某些异常导致连接被强制关闭。
+		*/
+		n, err := conn.Read(buffer)
+		fmt.Println(user, n)
+		// buffer 中完全为空
+		if n == 0 {
+			// 用户下线 
+			this.Boardcast(user, "下线")
+			return
+		} 
+		if err != nil {
+			fmt.Println("Conn Read err", err)
+			return
+		}
+		
+		msg := string(buffer[:n - 1])
+		// 处理读取的数据
+		this.Boardcast(user, msg)
+	}()
+	
 	// select{}
 }
 
@@ -87,6 +119,7 @@ func (this *Server) Start() {
 		// do handler
 		// 如果成功接收，则代表一个用户上线
 		go this.DoHandler(conn)
+
 	}
 }
 
