@@ -90,7 +90,7 @@ func (this *Server) DoHandler(conn net.Conn) {
 		*/
 		case <-isLive :
 			// 当前用户处于活跃态
-		case <-time.After(time.Second * 3) :
+		case <-time.After(time.Second * 60) :
 			// 当前用户 10 秒没有操作，超时踢出
 			user.SendMessage("长时间没有活动，踢出聊天室")
 			// Onlinemap 中删除 user
