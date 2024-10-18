@@ -13,6 +13,7 @@
 #### v7.2 超时强踢持续访问 channel bug 修复
 ### v8.0 用户私聊功能
 ### v9.0 客户端功能 + 命令行传参解析
+#### v9.1 客户端菜单显示
 
 ## 知识点
 ```
@@ -42,4 +43,34 @@
 		2. 发生了某些异常导致连接被强制关闭。
 	*/
 
+```
+
+```
+	func (this *Client) Run() {
+		for this.flag != 0{
+			for this.menu() != true {
+			
+			}
+
+			switch this.flag {
+			case 1:
+				fmt.Println("选择公聊模式")
+				break
+			case 2:
+				fmt.Println("选择私聊模式")
+				break
+			case 3:
+				fmt.Println("选择更改用户名")
+				break
+			case 0:
+				fmt.Println("退出系统")
+				break
+			}
+		}
+		/*
+			这里 select 执行的逻辑是，如果我 client 输入一直是不合法的，则会一直在最外侧循环；
+			如果合法则会进入内层 menu 循环，直到输入模式为合法范围。此时输入 123 都是正常处理业务，
+			而输入 0 则会导致this.flag变为 0，此时外层循环直接退出
+		*/
+	}
 ```
