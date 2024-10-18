@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net"
+	"os"
 )
 
 type Client struct {
@@ -12,6 +14,24 @@ type Client struct {
 	conn net.Conn
 	Name string
 	flag int
+}
+
+func (this *Client) DealResponse() {
+	io.Copy(os.Stdout, this.conn)
+}
+
+func (this *Client) updateName() bool {
+	fmt.Println(">>>>请输入修改后的用户名：")
+	fmt.Scanln(&this.Name)
+
+	sendMsg := "/rename|" + this.Name + "\n"
+	_, err := this.conn.Write([]byte(sendMsg))
+	if err != nil {
+		fmt.Println("conn Write err:", err)
+		return false
+	}
+
+	return true
 }
 
 func (this *Client) menu() bool {
@@ -47,18 +67,13 @@ func (this *Client) Run() {
 			fmt.Println("选择私聊模式")
 			break
 		case 3:
-			fmt.Println("选择更改用户名")
+			this.updateName()
 			break
 		case 0:
 			fmt.Println("退出系统")
 			break
 		}
 	}
-	/*
-		这里 select 执行的逻辑是，如果我 client 输入一直是不合法的，则会一直在最外侧循环；
-		如果合法则会进入内层 menu 循环，直到输入模式为合法范围。此时输入 123 都是正常处理业务，
-		而输入 0 则会导致this.flag变为 0，此时外层循环直接退出
-	*/
 }
 
 func NewClient(severIp string, severPort int) *Client {
@@ -99,6 +114,8 @@ func main() {
 		fmt.Println(">>>>>> 服务器连接失败...")
 		return
 	}
+	
+	go client.DealResponse()
 
 	fmt.Println(">>>>>> 服务器连接成功...")
 
