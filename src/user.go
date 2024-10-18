@@ -71,7 +71,7 @@ func (this *User) UserDoMessage(msg string) {
 	if msg == "/who" {
 		this.server.mapLock.Lock()
 		for _, value := range this.server.OnlineMap {
-			msg := "[" + value.Addr + "]" + value.Name + ": 在线"
+			msg := "[" + value.Addr + "]" + value.Name + ": 在线\n"
 			this.SendMessage(msg)
 		}
 		this.server.mapLock.Unlock()
@@ -97,7 +97,7 @@ func (this *User) UserDoMessage(msg string) {
 		remoteName := strings.Split(msg, "|")[1]
 
 		if remoteName == "" {
-			this.SendMessage("消息格式不正确，请使用“/to｜张三｜你好啊”格式")
+			this.SendMessage("消息格式不正确，请使用“/to｜张三｜你好啊”格式\n")
 			return
 		}
 		// 私聊用户不存在
@@ -114,7 +114,7 @@ func (this *User) UserDoMessage(msg string) {
 			return
 		}
 		// 获取发送的消息
-		newMsg = "[" + this.Name + "]:" + newMsg
+		newMsg = "[" + this.Name + "]:" + newMsg + "\n"
 		remoteUser.SendMessage(newMsg)
 
 	} else {

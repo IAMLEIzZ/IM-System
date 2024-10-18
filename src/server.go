@@ -68,7 +68,7 @@ func (this *Server) DoHandler(conn net.Conn) {
 				return
 			} 
 			if err != nil {
-				fmt.Println("Conn Read err", err)
+				fmt.Println("Conn Read err:", err)
 				return
 			}
 			msg := string(buffer[:n - 1])
@@ -92,14 +92,14 @@ func (this *Server) DoHandler(conn net.Conn) {
 			// 当前用户处于活跃态
 		case <-time.After(time.Second * 60) :
 			// 当前用户 10 秒没有操作，超时踢出
-			user.SendMessage("长时间没有活动，踢出聊天室")
+			user.SendMessage("长时间没有活动，踢出聊天室\n")
 			// Onlinemap 中删除 user
 			user.UserOffLine()
 			// 关闭资源(关闭用户通讯channel 和 连接句柄)
 			close(user.C)
 			conn.Close()
 			// 彻底结束一个 user 的连接周期
-			fmt.Println(user.Name + "被强制下线")
+			fmt.Println(user.Name + "被强制下线\n")
 			return
 		}
 	}
@@ -131,7 +131,7 @@ func (this *Server) Start() {
 	go this.ListenMessage()
 	// 接受请求
 	for {
-		conn, err := l.Accept()		
+		conn, err := l.Accept()
 		if err != nil {
 			fmt.Println("接收消息失败", err)
 			continue
