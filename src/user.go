@@ -34,7 +34,8 @@ func NewUser(conn net.Conn, server *Server) *User{
 
 // 监听当前客户端 chan 中收到的消息，一旦收到消息，则立刻输出给客户端
 func (this *User) ListenMessage() {
-	for msg := range this.C{
+	
+	for msg := range this.C {
 		this.conn.Write([]byte(msg + "\n"))
 	}
 }
@@ -57,7 +58,6 @@ func (this *User) UserOffLine(){
 	this.server.mapLock.Unlock()
 
 	this.server.Boardcast(this, "下线")
-
 }
 
 // 给用户本身发送消息
