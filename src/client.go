@@ -9,11 +9,11 @@ import (
 )
 
 type Client struct {
-	ServerIP string
+	ServerIP   string
 	ServerPort int
-	conn net.Conn
-	Name string
-	flag int
+	conn       net.Conn
+	Name       string
+	flag       int
 }
 
 func (this *Client) DealResponse() {
@@ -34,10 +34,54 @@ func (this *Client) updateName() bool {
 	return true
 }
 
+func (this *Client) SelectUsers() {
+	sendMsg := "/who\n"
+	_, err := this.conn.Write([]byte(sendMsg))
+
+	if err != nil {
+		fmt.Println("conn Write err:", err)
+		return
+	}
+}
+
+func (this *Client) PrivateChat() {
+
+	var remoteName string
+
+	this.SelectUsers()
+	fmt.Println(">>>>>请输入聊天对象[用户名], 输入 exit 表示退出")
+	fmt.Scanln(&remoteName)
+
+	for remoteName != "exit" {
+		var chatMsg string
+		fmt.Println(">>>>>请输入要发送的消息：, 输入 exit 表示退出")
+		fmt.Scanln(&chatMsg)
+
+		for chatMsg != "exit" {
+			if len(chatMsg) != 0 {
+				sendMsg := "/to|" + remoteName + "|" + chatMsg + "\n\n"
+				_, err := this.conn.Write([]byte(sendMsg))
+				if err != nil {
+					fmt.Println("conn Write err:", err)
+					break
+				}
+			}
+
+			chatMsg = ""
+			fmt.Println(">>>>>请输入要发送的消息：, 输入 exit 表示退出")
+			fmt.Scanln(&chatMsg)
+		}
+
+		this.SelectUsers()
+		fmt.Println(">>>>>请输入聊天对象[用户名], 输入 exit 表示退出")
+		fmt.Scanln(&remoteName)
+	}
+}
+
 func (this *Client) PublicChat() {
 	var chatMessage string
 
-	fmt.Println(">>>>>请输入要发送的消息：, 输入 exit. 表示退出")
+	fmt.Println(">>>>>请输入要发送的消息：, 输入 exit 表示退出")
 	fmt.Scanln(&chatMessage)
 
 	for chatMessage != "exit" {
@@ -48,11 +92,11 @@ func (this *Client) PublicChat() {
 			if err != nil {
 				fmt.Println("conn Write err:", err)
 				break
-			}	
+			}
 		}
 
 		chatMessage = ""
-		fmt.Println(">>>>>请输入要发送的消息：, 输入 exit. 表示退出")
+		fmt.Println(">>>>>请输入要发送的消息：, 输入 exit 表示退出")
 		fmt.Scanln(&chatMessage)
 	}
 }
@@ -77,9 +121,9 @@ func (this *Client) menu() bool {
 }
 
 func (this *Client) Run() {
-	for this.flag != 0{
+	for this.flag != 0 {
 		for this.menu() != true {
-		
+
 		}
 
 		switch this.flag {
@@ -87,7 +131,7 @@ func (this *Client) Run() {
 			this.PublicChat()
 			break
 		case 2:
-			fmt.Println("选择私聊模式")
+			this.PrivateChat()
 			break
 		case 3:
 			this.updateName()
@@ -101,9 +145,9 @@ func (this *Client) Run() {
 
 func NewClient(severIp string, severPort int) *Client {
 	client := &Client{
-		ServerIP: severIp,
+		ServerIP:   severIp,
 		ServerPort: severPort,
-		flag: 1024,
+		flag:       1024,
 	}
 
 	// 连接
@@ -120,7 +164,7 @@ func NewClient(severIp string, severPort int) *Client {
 }
 
 var serverIp string
-var serverPort int 
+var serverPort int
 
 func init() {
 	flag.StringVar(&serverIp, "ip", "10.249.85.146", "设置服务器 ip 地址")
@@ -137,7 +181,7 @@ func main() {
 		fmt.Println(">>>>>> 服务器连接失败...")
 		return
 	}
-	
+
 	go client.DealResponse()
 
 	fmt.Println(">>>>>> 服务器连接成功...")
